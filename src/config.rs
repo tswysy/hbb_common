@@ -72,7 +72,12 @@ lazy_static::lazy_static! {
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
     pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
-    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> =
+    RwLock::new(HashMap::from([
+        ("custom-rendezvous-server".to_owned(), "rustdesk.skill715.com:21116".to_owned()),
+        ("relay-server".to_owned(), "rustdesk.skill715.com:21117".to_owned()),
+        ("key".to_owned(), "Btee9ihd16DFhfsIICh0hqPqpDm5kIRbr2Cxo2Bsme4=".to_owned()),
+    ]));
     pub static ref OVERWRITE_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
