@@ -66,18 +66,13 @@ lazy_static::lazy_static! {
     static ref LOCAL_CONFIG: RwLock<LocalConfig> = RwLock::new(LocalConfig::load());
     static ref STATUS: RwLock<Status> = RwLock::new(Status::load());
     static ref ONLINE: Mutex<HashMap<String, i64>> = Default::default();
-    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("".to_owned());
+    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new(DEFAULT_ID_SERVER.to_owned());
     pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = Default::default();
     pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
     pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
-    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> =
-    RwLock::new(HashMap::from([
-        ("custom-rendezvous-server".to_owned(), "rustdesk.skill715.com:21116".to_owned()),
-        ("relay-server".to_owned(), "rustdesk.skill715.com:21117".to_owned()),
-        ("key".to_owned(), "Btee9ihd16DFhfsIICh0hqPqpDm5kIRbr2Cxo2Bsme4=".to_owned()),
-    ]));
+    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
@@ -118,8 +113,24 @@ const CHARS: &[char] = &[
     'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
-pub const RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
+// Connection fallbacks are kept separate from the editable network settings.
+const DEFAULT_ID_SERVER: &str = match option_env!("RUSTDESK_BUILTIN_ID_SERVER") {
+    Some(value) => value,
+    None => "",
+};
+const DEFAULT_RELAY_SERVER: &str = match option_env!("RUSTDESK_BUILTIN_RELAY_SERVER") {
+    Some(value) => value,
+    None => "",
+};
+pub const RENDEZVOUS_SERVERS: &[&str] = if DEFAULT_ID_SERVER.is_empty() {
+    &["rs-ny.rustdesk.com"]
+} else {
+    &[DEFAULT_ID_SERVER]
+};
+pub const RS_PUB_KEY: &str = match option_env!("RUSTDESK_BUILTIN_SERVER_KEY") {
+    Some(value) => value,
+    None => "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=",
+};
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
@@ -1048,6 +1059,15 @@ impl Config {
             SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
         } else {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+        }
+    }
+
+    pub fn get_relay_server() -> String {
+        let relay_server = Self::get_option(keys::OPTION_RELAY_SERVER);
+        if relay_server.is_empty() {
+            DEFAULT_RELAY_SERVER.to_owned()
+        } else {
+            relay_server
         }
     }
 
